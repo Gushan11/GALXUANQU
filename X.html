@@ -3,12 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>标签 & 时间选择复制</title>
+    <title>游戏信息工具合集</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            color: #333;
         }
+
+        /* 标签选择器样式 */
         .category {
             margin-bottom: 15px;
         }
@@ -40,26 +46,10 @@
             border-radius: 5px;
             background-color: #f9f9f9;
             white-space: pre-wrap;
+            min-height: 100px;
         }
-        .copy-btn {
-            margin-top: 10px;
-            padding: 8px 12px;
-            background-color: #2196F3;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .input-box {
-            margin-top: 10px;
-            padding: 8px;
-            width: 100%;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-            min-height: 40px;
-            resize: none;
-        }
+
+        /* 时间选择器样式 */
         .calendar {
             margin-top: 20px;
             padding: 10px;
@@ -83,161 +73,259 @@
         th {
             background-color: #f2f2f2;
         }
-        .selected-date {
-            background-color: #4CAF50;
-            color: white;
+
+        /* 输入框样式 */
+        .input-box {
+            margin-top: 10px;
+            padding: 8px;
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            min-height: 40px;
+            resize: none;
         }
 
+        /* 游戏名称转换器样式 */
+        .game-name-converter {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .converter-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        /* 按钮通用样式 */
+        .action-btn {
+            padding: 10px 15px;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: opacity 0.2s;
+        }
+        .action-btn:hover {
+            opacity: 0.9;
+        }
+        .copy-btn {
+            background-color: #2196F3;
+            margin-top: 15px;
+        }
+        .convert-btn {
+            background-color: #4CAF50;
+        }
+
+        /* Emoji样式 */
+        .emoji {
+            font-size: 1.2em;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
     </style>
 </head>
 <body>
+    <h1>🎮 游戏信息生成工具</h1>
 
-    <div id="container"></div>
-
-    <div class="selected-tags">
-        <strong>已选内容：</strong>
-        <span id="selectedText"></span>
+    <!-- 游戏名称输入 -->
+    <div class="game-name-converter">
+        <h3>🕹️ 游戏名称</h3>
+        <textarea id="gameName" class="input-box" placeholder="输入游戏名称..."></textarea>
+        <div class="converter-row">
+            <button class="action-btn convert-btn" onclick="updateAllContent()">✨ 生成标签格式</button>
+        </div>
     </div>
+
+    <!-- 标签选择器 -->
+    <div id="tagContainer"></div>
 
     <!-- 时间选择器 -->
     <div class="calendar">
-        <label>选择日期：</label>
+        <label>📅 选择日期：</label>
         <select id="yearSelect"></select>
         <select id="monthSelect"></select>
         <table id="calendarTable">
-            <tr>
-                <th>日</th><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th>
-            </tr>
+            <tr><th>日</th><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th></tr>
         </table>
     </div>
 
-    <!-- 自定义文本框 -->
-    <textarea id="extraText1" class="input-box" placeholder="请输入自定义标签..."></textarea>
-    <textarea id="extraText2" class="input-box" placeholder="请输入其他内容..."></textarea>
+    <!-- 自定义输入 -->
+    <textarea id="extraText1" class="input-box" placeholder="🏷️ 自定义标签..."></textarea>
+    <textarea id="extraText2" class="input-box" placeholder="📜 补充说明/游戏介绍..."></textarea>
 
-    <button class="copy-btn" onclick="copyText()">复制</button>
+    <!-- 结果显示区域 -->
+    <div class="selected-tags">
+        <strong>📋 生成结果：</strong>
+        <div id="selectedText"></div>
+    </div>
+
+    <button class="action-btn copy-btn" onclick="copyText()">📋 复制全部内容</button>
 
     <script>
-    document.addEventListener("DOMContentLoaded", function() {
+        // 全局变量
         let selectedCategories = {};
         let selectedDateText = "";
+        let convertedGameName = "";
 
-        // 更新已选内容
-        function updateSelectedText() {
-            let selectedText = Object.keys(selectedCategories).map(category => 
-                `${category}: ${selectedCategories[category].join(" ")}`
-            ).join("\n");
+        // 初始化页面
+        document.addEventListener("DOMContentLoaded", function() {
+            // 标签配置
+            const config = [
+                { "title": "🖥️ 运行平台", "options": ["WINDOWS", "安卓", "JOIPLAY", "WINE", "KRKR", "TY", "WINLATOR", "EXAGEAR", "MAC"] },
+                { "title": "🗣️ 语言", "options": ["日文", "简中", "繁中", "精翻", "AI翻译"] },
+                { "title": "📖 剧情", "options": ["无剧情", "少剧情", "长剧情"] },
+                { "title": "🌟 游戏类型", "options": ["SLG", "RPG", "GALGAME", "ACT","ADV","ARPG", "休闲", "神作", "新作", "AVG", "老物", "拔作", "视觉小说", "3D", "异世界"] },
+                { "title": "❤️色情内容", "options": ["巨乳", "贫乳", "萝莉", "人妻", "触手", "异种族", "异世界", "催眠", "束缚", "凌辱", "虫奸", "百合", "电车", "触摸", "机械", "睡奸", "野战", "露出", "扶她", "NTR", "后宫", "逆NTR", "逆后宫", "纯爱", "SM", "3P", "性服务", "拍摄", "群交", "猎奇", "破处", "超乳", "性玩具", "雌小鬼", "兽耳娘", "血腥"] },
+            ];
 
-            if (selectedDateText) {
-                selectedText += "\n" + selectedDateText;
-            }
-
-            document.getElementById("selectedText").textContent = selectedText;
-        }
-
-        // 标签选择逻辑
-        const config = [
-            { "title": "运行平台", "options": ["WINDOWS", "安卓", "JOIPLAY", "WINE", "KRKR", "TY", "WINLATOR", "EXAGEAR", "MAC"] },
-            { "title": "语言", "options": ["日文", "简中", "繁中", "精翻", "AI翻译"] },
-            { "title": "剧情", "options": ["无剧情", "少剧情", "长剧情"] },
-            { "title": "游戏类型", "options": ["SLG", "RPG", "GALGAME", "ACT","ADV","ARPG", "休闲", "神作", "新作", "AVG", "老物", "拔作", "视觉小说", "3D", "异世界"] },
-            { "title": "色情内容", "options": ["巨乳", "贫乳", "萝莉", "人妻", "触手", "异种族", "异世界", "催眠", "束缚", "凌辱", "虫奸", "百合", "电车", "触摸", "机械", "睡奸", "野战", "露出", "扶她", "NTR", "后宫", "逆NTR", "逆后宫", "纯爱", "SM", "3P", "性服务", "拍摄", "群交", "猎奇", "破处", "超乳", "性玩具", "雌小鬼", "兽耳娘", "血腥"] },
-        ];
-
-        const container = document.getElementById("container");
-
-        config.forEach(category => {
-            const categoryDiv = document.createElement("div");
-            categoryDiv.classList.add("category");
-
-            const titleDiv = document.createElement("div");
-            titleDiv.classList.add("category-title");
-            titleDiv.textContent = category.title;
-
-            const buttonsDiv = document.createElement("div");
-            buttonsDiv.classList.add("buttons");
-
-            category.options.forEach(option => {
-                const button = document.createElement("button");
-                button.classList.add("button");
-                button.textContent = option;
-                button.addEventListener("click", () => {
-                    button.classList.toggle("selected");
-                    updateSelectedCategories();
-                });
-                buttonsDiv.appendChild(button);
+            // 生成标签按钮
+            const container = document.getElementById("tagContainer");
+            config.forEach(category => {
+                const categoryDiv = document.createElement("div");
+                categoryDiv.className = "category";
+                categoryDiv.innerHTML = `
+                    <div class="category-title">${category.title}</div>
+                    <div class="buttons">
+                        ${category.options.map(opt => 
+                            `<button class="button">${opt}</button>`
+                        ).join("")}
+                    </div>
+                `;
+                container.appendChild(categoryDiv);
             });
 
-            categoryDiv.appendChild(titleDiv);
-            categoryDiv.appendChild(buttonsDiv);
-            container.appendChild(categoryDiv);
+            // 标签点击逻辑
+            document.querySelectorAll(".button").forEach(button => {
+                button.addEventListener("click", function() {
+                    this.classList.toggle("selected");
+                    updateSelectedCategories();
+                    updateAllContent();
+                });
+            });
+
+            // 日历生成逻辑
+            const yearSelect = document.getElementById("yearSelect");
+            const monthSelect = document.getElementById("monthSelect");
+            const calendarTable = document.getElementById("calendarTable");
+
+            // 年份选项（1950-2050）
+            for (let y = 1950; y <= 2050; y++) {
+                yearSelect.innerHTML += `<option value="${y}">${y}年</option>`;
+            }
+            yearSelect.value = new Date().getFullYear();
+
+            // 月份选项
+            for (let m = 1; m <= 12; m++) {
+                monthSelect.innerHTML += `<option value="${m}">${m}月</option>`;
+            }
+            monthSelect.value = new Date().getMonth() + 1;
+
+            // 生成日历
+            function generateCalendar() {
+                const year = +yearSelect.value;
+                const month = +monthSelect.value - 1;
+                const firstDay = new Date(year, month, 1);
+                const lastDay = new Date(year, month + 1, 0);
+                
+                calendarTable.innerHTML = `<tr><th>日</th><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th></tr>`;
+                
+                let row = calendarTable.insertRow();
+                for (let i = 0; i < firstDay.getDay(); i++) row.insertCell();
+
+                for (let d = 1; d <= lastDay.getDate(); d++) {
+                    if (row.cells.length === 7) row = calendarTable.insertRow();
+                    const cell = row.insertCell();
+                    cell.textContent = d;
+                    cell.onclick = () => {
+                        selectedDateText = `发售时间：#${year}年 #${month + 1}月 ${d}`;
+                        updateAllContent();
+                    };
+                }
+            }
+
+            yearSelect.addEventListener("change", generateCalendar);
+            monthSelect.addEventListener("change", generateCalendar);
+            generateCalendar();
+
+            // 为额外输入框添加输入监听
+            document.getElementById("extraText1").addEventListener("input", updateAllContent);
+            document.getElementById("extraText2").addEventListener("input", updateAllContent);
+            document.getElementById("gameName").addEventListener("input", updateAllContent);
         });
 
-        // 更新选中的标签
+        // 更新已选标签
         function updateSelectedCategories() {
             selectedCategories = {};
-            document.querySelectorAll(".button.selected").forEach(button => {
-                const categoryTitle = button.closest(".category").querySelector(".category-title").textContent;
-                if (!selectedCategories[categoryTitle]) {
-                    selectedCategories[categoryTitle] = [];
-                }
-                selectedCategories[categoryTitle].push("#" + button.textContent);
+            document.querySelectorAll(".button.selected").forEach(btn => {
+                const category = btn.closest(".category").querySelector(".category-title").textContent;
+                (selectedCategories[category] || (selectedCategories[category] = [])).push("#" + btn.textContent);
             });
-
-            updateSelectedText();
         }
 
-        // 时间选择器
-        const yearSelect = document.getElementById("yearSelect");
-        const monthSelect = document.getElementById("monthSelect");
-        const calendarTable = document.getElementById("calendarTable");
-
-        const currentYear = new Date().getFullYear();
-        for (let y = currentYear - 55; y <= currentYear + 30; y++) {
-            yearSelect.innerHTML += `<option value="${y}">${y}年</option>`;
-        }
-        yearSelect.value = currentYear;
-
-        for (let m = 1; m <= 12; m++) {
-            monthSelect.innerHTML += `<option value="${m}">${m}月</option>`;
-        }
-        monthSelect.value = new Date().getMonth() + 1;
-
-        function generateCalendar() {
-            const year = parseInt(yearSelect.value);
-            const month = parseInt(monthSelect.value);
-            const firstDay = new Date(year, month - 1, 1);
-            const lastDay = new Date(year, month, 0);
+        // 转换游戏名称
+        function convertGameName() {
+            const input = document.getElementById("gameName").value.trim();
+            convertedGameName = input
+                .replace(/[^\p{L}\p{N}]/gu, "_")
+                .replace(/_+/g, "_")
+                .replace(/^_|_$/g, "");
             
-            calendarTable.innerHTML = "<tr><th>日</th><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th></tr>";
+            return convertedGameName ? `#${convertedGameName}` : "";
+        }
 
-            let row = calendarTable.insertRow();
-            for (let i = 0; i < firstDay.getDay(); i++) row.insertCell();
+        // 更新所有内容显示
+        function updateAllContent() {
+            const gameName = convertGameName();
+            let content = "";
 
-            for (let date = 1; date <= lastDay.getDate(); date++) {
-                if (row.cells.length === 7) row = calendarTable.insertRow();
-                const cell = row.insertCell();
-                cell.textContent = date;
-                cell.onclick = () => {
-                    selectedDateText = `发售时间：#${year}年 #${month}月 ${date}`;
-                    updateSelectedText();
-                };
+            // 添加游戏名称（🎮游戏手柄emoji）
+            if (gameName) {
+                content += `🎮 ${gameName}\n\n`;
+            }
+
+            // 添加分类标签（图钉emoji）
+            const categoryContent = Object.entries(selectedCategories)
+                .map(([k, v]) => `${k}: ${v.join(" ")}`)
+                .join("\n");
+            
+            if (categoryContent) {
+                content += categoryContent + "\n";
+            }
+
+            // 添加日期（📅日历emoji）
+            if (selectedDateText) {
+                content += `📅 ${selectedDateText}\n`;
+            }
+
+            // 添加自定义标签（🏷️标签emoji）
+            const extra1 = document.getElementById("extraText1").value.trim();
+            if (extra1) {
+                content += `\n🏷️ ${extra1}`;
+            }
+
+            // 添加分隔线和补充内容（📜卷轴emoji）
+            const extra2 = document.getElementById("extraText2").value.trim();
+            if (extra2) {
+                content += `\n\n📜 —————游戏介绍——————\n\n✨ ${extra2}`;
+            }
+
+            document.getElementById("selectedText").textContent = content;
+        }
+
+        // 复制功能
+        function copyText() {
+            const content = document.getElementById("selectedText").textContent;
+            if (content.trim()) {
+                navigator.clipboard.writeText(content);
+                alert("📋 已复制到剪贴板！");
+            } else {
+                alert("⚠️ 没有可复制的内容！");
             }
         }
-
-        yearSelect.addEventListener("change", generateCalendar);
-        monthSelect.addEventListener("change", generateCalendar);
-        generateCalendar();
-    });
-
-    // 复制文本
-    function copyText() {
-        navigator.clipboard.writeText(document.getElementById("selectedText").textContent + "\n" + 
-            document.getElementById("extraText1").value + "\n\n" + 
-            document.getElementById("extraText2").value);
-        alert("复制成功！");
-    }
-</script>
-
+    </script>
 </body>
 </html>
